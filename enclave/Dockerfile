@@ -9,8 +9,29 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
     curl \
     ca-certificates \
+    build-essential \
+    cmake \
+    git \
+    ninja-build \
+    pkg-config \
+    libssl-dev \
+    clang \
+    python3 \
     && rm -rf /var/lib/apt/lists/*
 
+# install risc0 tools
+RUN curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused -fsSL 'https://sh.rustup.rs' | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+RUN git clone https://github.com/risc0/risc0.git \
+    && cd risc0 && ls && cargo install --path rzup \
+    && rzup toolchain build rust \
+    && git checkout origin/release-1.1 \
+    && cargo install --path risc0/cargo-risczero \
+    && rzup install cpp
+#RUN curl -L https://risczero.com/install | bash
+#RUN rzup install
+#RUN rzup install cpp
+ 
 # working directory
 WORKDIR /app
 
@@ -54,6 +75,9 @@ RUN chmod +x start_prover.sh
 
 COPY kalypso-attestation-prover-cpu ./kalypso-attestation-prover
 RUN chmod +x kalypso-attestation-prover
+
+COPY benchmark ./
+RUN chmod +x benchmark
 
 COPY .env ./
 
